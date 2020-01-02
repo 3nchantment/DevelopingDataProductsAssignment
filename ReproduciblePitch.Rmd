@@ -1,0 +1,94 @@
+---
+title: "Reproducible Pitch"
+author: "Enchantment"
+date: "1.2.2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+ 
+## Requirements
+
+OK, you've made your shiny app, now it's time to make your pitch. You get 5 slides (inclusive of the title slide) to pitch a your app. You're going to create a web page using Slidify or Rstudio Presenter with an html5 slide deck.
+
+Here's what you need
+
+5 slides to pitch our idea done in Slidify or Rstudio Presenter
+Your presentation pushed to github or Rpubs
+A link to your github or Rpubs presentation pasted into the provided text box
+Your presentation must satisfy the following
+
+It must be done in Slidify or Rstudio Presenter
+It must be 5 pages
+It must be hosted on github or Rpubs
+It must contained some embedded R code that gets run when slidifying the document
+
+## Single Variable Scatter vs Infant Mortality (boxplot)
+#### Use a scatter/boxplot to explore each parameter and its relationship with Infant Mortality
+```{r scatter, echo = FALSE, message=FALSE}
+library(datasets)
+swdata <- swiss
+boxplot(Infant.Mortality ~ Agriculture, 
+            data = swdata)
+```
+
+## Single Variable Regression vs Infant Mortality (linear regression)
+#### Use linear regression to explore each parameter and its relationship with Infant Mortality
+```{r reg, echo = FALSE, message=FALSE}
+library(datasets)
+library(glmnet)
+swdata <- swiss
+model <- lm(Infant.Mortality ~ Agriculture, data=swdata)
+par(mfrow = c(2,2))
+plot(model)
+```
+
+## Lasso Use Case
+#### Use Lasso Regression to determine feature importance and show those features to user:
+```{r lasso, echo = FALSE, message=FALSE}
+
+library(glmnet)
+library(datasets)
+library(corrplot)
+
+swdata <- swiss
+
+Xn <- swdata[, !names(swdata) %in% c("Infant.Mortality")]
+yn <- swdata["Infant.Mortality"]
+
+X <- as.matrix(Xn)  
+y <- as.matrix(yn)
+
+
+lambdas <- 10^seq(-5, 5, length.out = 100)
+
+lasso_cv <- cv.glmnet(X, y, alpha = 1, lambda = lambdas,
+                      standardize = TRUE, nfolds = 10)
+
+lambda_cv <- lasso_cv$lambda.min
+
+model_cv <- glmnet(X, y, alpha = 1,
+                   lambda = lambda_cv, standardize = TRUE)
+
+y_hat_cv <- predict(model_cv, X)
+rsq_lasso_cv <- cor(y, y_hat_cv)^2
+lasso_coef_shrink <- glmnet(X, y, alpha = 1, lambda = lambdas, standardize = FALSE)
+
+lcs <- glmnet(X, y, alpha = 1, lambda = lambda_cv, standardize = FALSE)
+
+coeffs <- coef(lcs)
+df <- data.frame(name = coeffs@Dimnames[[1]][coeffs@i + 1], coefficient = coeffs@x)
+df$abs <- abs(df$coefficient)
+df[order(df$abs, decreasing=TRUE),]
+```
+#### Use lasso regression to fit model? (perhaps not for this model!)
+#### R^2 below
+```{r lasso fit, echo = FALSE, message=FALSE}
+rsq_lasso_cv
+```
+
+
